@@ -109,13 +109,20 @@ class EngineeringDocumentParser:
                 if "SUBTOTAL" in text_upper or "GRAND TOTAL" in text_upper:
                     break
 
-                # Extract tokens spatially by column coordinates
-                item_idx_tokens = [t.text for t in line.tokens if 70 <= (t.x0 + t.x1) / 2.0 <= 130 and t.text.isdigit()]
-                part_no_tokens = [t.text for t in line.tokens if 135 <= (t.x0 + t.x1) / 2.0 <= 325]
-                desc_tokens = [t.text for t in line.tokens if 326 <= (t.x0 + t.x1) / 2.0 <= 645 and not t.text.isdigit()]
-                qty_tokens = [t.text for t in line.tokens if 635 <= (t.x0 + t.x1) / 2.0 <= 705 and t.text.isdigit()]
-                unit_price_tokens = [t.text for t in line.tokens if 706 <= (t.x0 + t.x1) / 2.0 <= 815]
-                total_price_tokens = [t.text for t in line.tokens if 816 <= (t.x0 + t.x1) / 2.0 <= 935]
+                # Extract tokens spatially using dynamic table header column intervals (with robust defaults)
+                b_item = col_bounds.get("ITEM", (70, 130))
+                b_part = col_bounds.get("PART_NUMBER", (135, 325))
+                b_desc = col_bounds.get("DESCRIPTION", (326, 645))
+                b_qty = col_bounds.get("QTY", (635, 705))
+                b_uprice = col_bounds.get("UNIT_PRICE", (706, 815))
+                b_total = col_bounds.get("TOTAL", (816, 935))
+
+                item_idx_tokens = [t.text for t in line.tokens if b_item[0] <= (t.x0 + t.x1) / 2.0 <= b_item[1] and t.text.isdigit()]
+                part_no_tokens = [t.text for t in line.tokens if b_part[0] <= (t.x0 + t.x1) / 2.0 <= b_part[1]]
+                desc_tokens = [t.text for t in line.tokens if b_desc[0] <= (t.x0 + t.x1) / 2.0 <= b_desc[1] and not t.text.isdigit()]
+                qty_tokens = [t.text for t in line.tokens if b_qty[0] <= (t.x0 + t.x1) / 2.0 <= b_qty[1] and t.text.isdigit()]
+                unit_price_tokens = [t.text for t in line.tokens if b_uprice[0] <= (t.x0 + t.x1) / 2.0 <= b_uprice[1]]
+                total_price_tokens = [t.text for t in line.tokens if b_total[0] <= (t.x0 + t.x1) / 2.0 <= b_total[1]]
 
                 if part_no_tokens and (unit_price_tokens or total_price_tokens):
                     part_no = "".join(part_no_tokens)
